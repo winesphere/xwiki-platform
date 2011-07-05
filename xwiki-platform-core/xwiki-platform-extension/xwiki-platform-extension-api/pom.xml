@@ -67,19 +67,55 @@
     <dependency>
       <groupId>org.reflections</groupId>
       <artifactId>reflections</artifactId>
-      <version>0.9.5-RC2</version>
-      <exclusions>
-        <exclusion>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-classic</artifactId>
-        </exclusion>
-      </exclusions>
+      <version>0.9.5</version>
+      <scope>system</scope>
+      <systemPath>/media/data/download/reflections-0.9.5.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-model</artifactId>
       <version>${maven.version}</version>
     </dependency>
+
+    <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>r08</version>
+        </dependency>
+
+        <!-- actually needed only when scanning is done. if using {@link Reflections.collect()} javassist is not needed -->
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.12.1.GA</version>
+        </dependency>
+
+        <!-- effectively needed when XmlSerializer is used -->
+        <dependency>
+            <groupId>dom4j</groupId>
+            <artifactId>dom4j</artifactId>
+            <version>1.6.1</version>
+            <!--<scope>runtime</scope>-->
+            <!--<optional>true</optional>-->
+        </dependency>
+
+        <!-- effectively needed when JsonSerializer is used -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>1.4</version>
+            <!--<scope>runtime</scope>-->
+            <optional>true</optional>
+        </dependency>
+
+        <!-- effectively needed when using JBoss6UrlType -->
+        <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jboss-vfs</artifactId>
+            <version>3.0.0.CR5</version>
+            <!--<scope>runtime</scope>-->
+            <optional>true</optional>
+        </dependency>
 
     <!-- Test dependencies -->
     <dependency>
@@ -129,6 +165,11 @@
       <id>reflections-repo</id>
       <name>Reflections Maven2 Repository</name>
       <url>http://reflections.googlecode.com/svn/repo</url>
+    </repository>
+    <repository>
+      <id>jboss-public-repository-group</id>
+      <name>JBoss Public Maven Repository Group</name>
+      <url>https://repository.jboss.org/nexus/content/groups/public/</url>
     </repository>
   </repositories>
 </project>

@@ -21,11 +21,9 @@ package org.xwiki.extension.repository.internal;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -74,34 +72,15 @@ public class DefaultCoreExtensionScanner
     private static final String SNAPSHOTSUFFIX = "-SNAPSHOT";
 
     /**
-     * JBoss vfszip protocol.
-     */
-    private static final String PROTOCOL_VFSZIP = "vfszip:";
-
-    /**
-     * JBoss vfsfile protocol.
-     */
-    private static final String PROTOCOL_VFSFILE = "vfsfile:";
-
-    /**
-     * file protocol.
-     */
-    private static final String PROTOCOL_FILE = "file:";
-
-    /**
      * Scan classpath to find core extensions.
      * 
      * @return scan jar files in classpath to find core extensions
      */
     public Map<String, DefaultCoreExtension> loadExtensions(DefaultCoreExtensionRepository repository)
     {
-        Set<URL> baseURLs = ClasspathHelper.getUrlsForPackagePrefix(MAVENPACKAGE);
-
-        baseURLs = filterURLs(baseURLs);
-
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.setScanners(new ResourcesScanner());
-        configurationBuilder.setUrls(baseURLs);
+        configurationBuilder.setUrls(ClasspathHelper.forPackage(MAVENPACKAGE));
         configurationBuilder.filterInputsBy(new FilterBuilder.Include(FilterBuilder.prefix(MAVENPACKAGE)));
 
         Reflections reflections = new Reflections(configurationBuilder);
@@ -150,7 +129,7 @@ public class DefaultCoreExtensionScanner
                 }
 
                 DefaultCoreExtension coreExtension =
-                    new DefaultCoreExtension(repository, ClasspathHelper.getBaseUrl(descriptorUrl, baseURLs),
+                    new DefaultCoreExtension(repository, descriptorUrl,
                         new ExtensionId(groupId + ':' + mavenModel.getArtifactId(), version),
                         packagingToType(mavenModel.getPackaging()));
 
@@ -184,7 +163,7 @@ public class DefaultCoreExtensionScanner
             // Normalize and guess
 
             Map<String, Object[]> artefacts = new HashMap<String, Object[]>();
-            Set<URL> urls = ClasspathHelper.getUrlsForCurrentClasspath();
+            Set<URL> urls = ClasspathHelper.forClassLoader();
 
             for (URL url : urls) {
                 String filename = url.getPath().substring(url.getPath().lastIndexOf('/') + 1);
@@ -244,36 +223,6 @@ public class DefaultCoreExtensionScanner
         }
 
         return extensions;
-    }
-
-    /**
-     * JBoss returns URLs with the vfszip and vfsfile protocol for resources, and the org.reflections library doesn't
-     * recognize them. This is more a bug inside the reflections library, but we can write a small workaround for a
-     * quick fix on our side.
-     * 
-     * @param urls base URLs to modify
-     * @return modified base URLs
-     */
-    // TODO: remove when http://code.google.com/p/reflections/issues/detail?id=76 is fixed
-    private Set<URL> filterURLs(Set<URL> urls)
-    {
-        Set<URL> results = new HashSet<URL>(urls.size());
-        for (URL url : urls) {
-            String cleanURL = url.toString();
-            // Fix JBoss URLs
-            if (url.getProtocol().startsWith(PROTOCOL_VFSZIP)) {
-                cleanURL = cleanURL.replaceFirst(PROTOCOL_VFSZIP, PROTOCOL_FILE);
-            } else if (url.getProtocol().startsWith(PROTOCOL_VFSFILE)) {
-                cleanURL = cleanURL.replaceFirst(PROTOCOL_VFSFILE, PROTOCOL_FILE);
-            }
-            cleanURL = cleanURL.replaceFirst("\\.jar/", ".jar!/");
-            try {
-                results.add(new URL(cleanURL));
-            } catch (MalformedURLException ex) {
-                // Shouldn't happen, but we can't do more to fix this URL.
-            }
-        }
-        return results;
     }
 
     /**
