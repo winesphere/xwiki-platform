@@ -62,6 +62,10 @@ import org.jmock.api.Invocation;
 
 import org.xwiki.test.AbstractMockingComponentTestCase;
 import org.xwiki.store.locks.preemptive.internal.PreemptiveLockProvider;
+import org.xwiki.store.internal.XWikiHibernateTransaction;
+import org.xwiki.store.XWikiTransaction;
+import org.xwiki.store.StartableTransactionRunnable;
+import org.xwiki.store.XWikiTransactionProvider;
 
 import org.apache.commons.io.IOUtils;
 
@@ -166,7 +170,9 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
                                             storageLocation,
                                             new PreemptiveLockProvider());
 
-        this.attachStore = new FilesystemAttachmentStore(fileTools);
+        this.attachStore =
+            new FilesystemAttachmentStore(fileTools,
+                                          new DummyHibernateTransactionProvider(this.mockContext));
         this.storeFile =
             this.fileTools.getAttachmentFileProvider(this.mockAttach).getAttachmentContentFile();
         HELLO_STREAM.reset();
@@ -236,7 +242,6 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
     {
         this.jmockContext.checking(new Expectations() {{
             oneOf(mockAttachVersionStore).deleteArchive(mockAttach, mockContext, false);
-            exactly(2).of(mockHibernateSession).delete(with(anything()));
         }});
         this.createFile();
 
@@ -254,7 +259,6 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
 
         this.jmockContext.checking(new Expectations() {{
             oneOf(mockAttachVersionStore).deleteArchive(mockAttach, mockContext, false);
-            exactly(2).of(mockHibernateSession).delete(with(anything()));
             oneOf(mockHibernate).saveXWikiDoc(doc, mockContext, false);
                 will(new CustomAction("Make sure the attachment has been removed from the list.") {
                     public Object invoke(final Invocation invoc)
@@ -304,5 +308,20 @@ public class FilesystemAttachmentStoreTest extends AbstractMockingComponentTestC
             }
         }
         toDelete.delete();
+    }
+
+    private static class DummyHibernateTransactionProvider implements XWikiTransactionProvider
+    {
+        private XWikiContext context;
+
+        public DummyHibernateTransactionProvider(final XWikiContext context)
+        {
+            this.context = context;
+        }
+
+        public StartableTransactionRunnable<XWikiTransaction> get()
+        {
+            return new XWikiHibernateTransaction(this.context);
+        }
     }
 }

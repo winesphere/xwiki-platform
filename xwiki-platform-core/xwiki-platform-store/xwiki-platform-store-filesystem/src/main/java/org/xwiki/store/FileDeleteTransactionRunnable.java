@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @version $Id$
  * @since 3.0M2
  */
-public class FileDeleteTransactionRunnable extends StartableTransactionRunnable<TransactionRunnable>
+public class FileDeleteTransactionRunnable extends StartableTransactionRunnable
 {
     /** The location of the file to sdelete. */
     private final File toDelete;

@@ -37,7 +37,7 @@ import org.apache.commons.io.IOUtils;
  * @version $Id$
  * @since 3.0M2
  */
-public class FileSaveTransactionRunnable extends StartableTransactionRunnable<TransactionRunnable>
+public class FileSaveTransactionRunnable extends StartableTransactionRunnable
 {
     /** The location of the file to save the attachment content in. */
     private final File toSave;

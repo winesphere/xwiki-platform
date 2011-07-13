@@ -29,9 +29,9 @@
     <artifactId>xwiki-platform-store</artifactId>
     <version>3.2-SNAPSHOT</version>
   </parent>
-  <artifactId>xwiki-platform-store-filesystem-attachments</artifactId>
-  <name>XWiki Platform - Store - Filesystem - Attachments</name>
-  <description>A means to store XWikiAttachments on the filesystem with versioning.</description>
+  <artifactId>xwiki-platform-store-legacy</artifactId>
+  <name>XWiki Platform - Store - Legacy</name>
+  <description>A connector which bridges the storage engine in oldcore into the new storage module.</description>
   <dependencies>
     <dependency>
       <groupId>org.xwiki.commons</groupId>
@@ -39,26 +39,26 @@
       <version>${commons.version}</version>
     </dependency>
 
-    <!-- Needed for DocumentReferenceSerializer implementation. -->
+    <!-- Needed for DocumentReferenceSerializer implementation. -
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-model</artifactId>
       <version>${project.version}</version>
-    </dependency>
+    </dependency>-->
 
-    <!-- Used to serialize the metadata for attachments -->
+    <!-- Used to serialize the metadata for attachments -
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-store-serialization</artifactId>
       <version>${project.version}</version>
-    </dependency>
+    </dependency>-->
 
-    <!-- StreamProvider -->
+    <!-- StreamProvider -
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-store-api</artifactId>
       <version>${project.version}</version>
-    </dependency>
+    </dependency>-->
 
     <!-- TransactionRunnable -->
     <dependency>
@@ -67,62 +67,50 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- FileSaveTransactionRunnable, FileDeleteTransactionRunnable -->
+    <!-- FileSaveTransactionRunnable, FileDeleteTransactionRunnable
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-store-filesystem</artifactId>
       <version>${project.version}</version>
-    </dependency>
+    </dependency>-->
 
-    <!--
-     * Needed for:
-     * XWikiAttachment, XWikiDocument, XWikiHibernateStore,
-     * XWikiAttachmentStoreInterface, XWikiAttachmentVersioningStore,
-     * XWikiAttachmentRecyclebinStore
-     --> 
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-oldcore</artifactId>
       <version>${project.version}</version>
     </dependency>
 
-    <!-- LockProvider for locking attachments -->
+    <!-- LockProvider for locking attachments -
     <dependency>
       <groupId>org.xwiki.platform</groupId>
       <artifactId>xwiki-platform-store-locks</artifactId>
       <version>${project.version}</version>
-    </dependency>
-
-    <!-- XWikiTransactionProvider -->
-    <dependency>
-      <groupId>org.xwiki.platform</groupId>
-      <artifactId>xwiki-platform-store-legacy</artifactId>
-      <version>${project.version}</version>
-    </dependency>
+    </dependency>-->
 
 
-   <!-- Testing Dependencies -->
+   <!-- Testing Dependencies -
 
     <dependency>
       <groupId>org.xwiki.commons</groupId>
       <artifactId>xwiki-commons-test</artifactId>
       <version>${commons.version}</version>
       <scope>test</scope>
-    </dependency>
+    </dependency>-->
 
-    <!-- Needed for ClassImposteriser for mocking XWikiContext etc. -->
+    <!-- Needed for ClassImposteriser for mocking XWikiContext etc. -
     <dependency>
       <groupId>org.jmock</groupId>
       <artifactId>jmock-legacy</artifactId>
       <scope>test</scope>
-    </dependency>
+    </dependency>-->
 
-    <!-- For some tests we need to have the Servlet API JAR available -->
+    <!-- For some tests we need to have the Servlet API JAR available -
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>
       <scope>test</scope>
-    </dependency>
+    </dependency>-->
+
   </dependencies>
   <build>
     <plugins>
@@ -132,8 +120,8 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <configuration>
           <excludes>
-            <!-- This is excluded because of a fan out violation. TODO: FIX! -->
-            **/com/xpn/xwiki/store/FilesystemAttachmentRecycleBinStore.java
+            <!-- This is excluded because of a fan out violation. TODO: FIX! -
+            **/com/xpn/xwiki/store/FilesystemAttachmentRecycleBinStore.java-->
           </excludes>
         </configuration>
       </plugin>

@@ -1,0 +1,2 @@
+org.xwiki.store.internal.XWikiHibernateTransactionProvider
+org.xwiki.store.internal.ConfiguredXWikiTransactionProvider
