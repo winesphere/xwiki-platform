@@ -19,12 +19,12 @@
  */
 package org.xwiki.store.internal;
 
-import java.util.Map;
-
 import com.xpn.xwiki.XWikiContext;
 import javax.inject.Inject;
 import org.xwiki.context.Execution;
 import org.xwiki.component.annotation.Component;
+import org.xwiki.component.manager.ComponentLookupException;
+import org.xwiki.component.manager.ComponentManager;
 import org.xwiki.component.phase.Initializable;
 import org.xwiki.component.phase.InitializationException;
 import org.xwiki.store.XWikiTransaction;
@@ -45,9 +45,9 @@ public class ConfiguredXWikiTransactionProvider implements XWikiTransactionProvi
     @Inject
     private Execution exec;
 
-    /** A map of all providers. */
+    /** ComponentManager to get TransactionProvider from. */
     @Inject
-    private Map<String, XWikiTransactionProvider> providers;
+    private ComponentManager manager;
 
     /** The provider which will be wrapped, chosen by examining configuration. */
     private XWikiTransactionProvider provider;
@@ -59,21 +59,21 @@ public class ConfiguredXWikiTransactionProvider implements XWikiTransactionProvi
      */
     public void initialize() throws InitializationException
     {
-        final XWikiContext context = (XWikiContext) this.exec.getContext().getProperty("xwiki-context");
+        final XWikiContext context = (XWikiContext) this.exec.getContext().getProperty("xwikicontext");
         final String hint = context.getWiki().Param("xwiki.store.main.hint");
-        final XWikiTransactionProvider prov = providers.get(hint);
-        if (prov == null) {
-            throw new InitializationException("Could not find provider specified in xwiki.cfg "
-                                              + "xwiki.store.main.hint, check that there is actually a "
-                                              + "transaction provider by that name.");
-        }
-        if (prov == this) {
+        if ("configured".equals(hint)) {
             throw new InitializationException("The provider specified in xwiki.cfg "
                                               + "xwiki.store.main.hint, is the same hint as the provider "
                                               + "which defers to the hint. This would cause an "
                                               + "infinite loop.");
         }
-        this.provider = prov;
+        try {
+            this.provider = manager.lookup(XWikiTransactionProvider.class, hint);
+        } catch (ComponentLookupException e) {
+            throw new InitializationException("Could not find provider specified in xwiki.cfg "
+                                              + "xwiki.store.main.hint, check that there is actually a "
+                                              + "transaction provider by that name.");
+        }
     }
 
     /**
@@ -81,7 +81,7 @@ public class ConfiguredXWikiTransactionProvider implements XWikiTransactionProvi
      *
      * @see org.xwiki.store.XWikiTransactionProvider#get()
      */
-    public StartableTransactionRunnable<XWikiTransaction> get()
+    public StartableTransactionRunnable<? extends XWikiTransaction> get()
     {
         return this.provider.get();
     }

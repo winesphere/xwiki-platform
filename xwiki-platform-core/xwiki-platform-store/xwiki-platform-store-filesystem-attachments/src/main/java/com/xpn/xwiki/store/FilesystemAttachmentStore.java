@@ -265,7 +265,7 @@ public class FilesystemAttachmentStore implements XWikiAttachmentStoreInterface
                                       final boolean bTransaction)
         throws XWikiException
     {
-        final StartableTransactionRunnable<XWikiTransaction> transaction = this.provider.get();
+        final StartableTransactionRunnable<? extends XWikiTransaction> transaction = this.provider.get();
         this.getAttachmentDeleteRunnable(attachment, parentUpdate, context).runIn(transaction);
         try {
             transaction.start();

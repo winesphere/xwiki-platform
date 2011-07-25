@@ -31,5 +31,5 @@ import org.xwiki.component.annotation.ComponentRole;
 public interface XWikiTransactionProvider
 {
     /** @return a fresh transaction of the type for the configured storage engine. */
-    StartableTransactionRunnable<XWikiTransaction> get();
+    StartableTransactionRunnable<? extends XWikiTransaction> get();
 }
