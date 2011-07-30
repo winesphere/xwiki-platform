@@ -51,6 +51,7 @@ import org.dom4j.dom.DOMElement;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.xwiki.model.reference.SpaceReference;
+import org.xwiki.model.reference.EntityReference;
 import org.xwiki.observation.ObservationManager;
 import org.xwiki.query.QueryException;
 
@@ -91,8 +92,6 @@ public class Package
     private List<DocumentInfo> files = null;
 
     private List<DocumentInfo> customMappingFiles = null;
-
-    private List<DocumentInfo> classFiles = null;
 
     private boolean backupPack = false;
 
@@ -227,7 +226,6 @@ public class Package
     {
         this.files = new ArrayList<DocumentInfo>();
         this.customMappingFiles = new ArrayList<DocumentInfo>();
-        this.classFiles = new ArrayList<DocumentInfo>();
     }
 
     public boolean add(XWikiDocument doc, int defaultAction, XWikiContext context) throws XWikiException
@@ -259,9 +257,6 @@ public class Package
             docinfo.setAction(defaultAction);
             this.files.add(docinfo);
             BaseClass bclass = doc.getXClass();
-            if (bclass.getFieldList().size() > 0) {
-                this.classFiles.add(docinfo);
-            }
             if (bclass.getCustomMapping() != null) {
                 this.customMappingFiles.add(docinfo);
             }
@@ -583,18 +578,30 @@ public class Package
 
         // Start by installing all documents having a class definition so that their
         // definitions are available when installing documents using them.
-        for (DocumentInfo classFile : this.classFiles) {
-            if (installDocument(classFile, isAdmin, backup, context) == DocumentInfo.INSTALL_ERROR) {
-                status = DocumentInfo.INSTALL_ERROR;
+        int i = 0;
+        while (i < this.files.size()) {
+            final DocumentInfo docInfoI = this.files.get(i);
+            final XWikiDocument docI = docInfoI.getDoc();
+            jloop:
+            for (int j = i + 1; j < this.files.size(); j++) {
+                final XWikiDocument docJ = this.files.get(j).getDoc();
+                final EntityReference docJRef = docJ.getDocumentReference();
+                for (final EntityReference objClass : docI.getXObjects().keySet()) {
+                    if (objClass.equals(docJRef)) {
+                        this.files.remove(i);
+                        this.files.add(docInfoI);
+                        i--;
+                        break jloop;
+                    }
+                }
             }
+            i++;
         }
 
-        // Install the remaining documents (without class definitions).
+        // Install the documents.
         for (DocumentInfo docInfo : this.files) {
-            if (!this.classFiles.contains(docInfo)) {
-                if (installDocument(docInfo, isAdmin, backup, context) == DocumentInfo.INSTALL_ERROR) {
-                    status = DocumentInfo.INSTALL_ERROR;
-                }
+            if (installDocument(docInfo, isAdmin, backup, context) == DocumentInfo.INSTALL_ERROR) {
+                status = DocumentInfo.INSTALL_ERROR;
             }
         }
         setStatus(status, context);
