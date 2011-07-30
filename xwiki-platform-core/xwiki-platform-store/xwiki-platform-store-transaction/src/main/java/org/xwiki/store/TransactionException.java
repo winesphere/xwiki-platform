@@ -111,6 +111,18 @@ public class TransactionException extends Exception
         return new ArrayList<Throwable>(this.causes);
     }
 
+    /**
+     * {@inheritDoc}
+     * Just get the first cause and hope there are no others.
+     *
+     * @see java.lang.Exception#getCause()
+     */
+    @Override
+    public Throwable getCause()
+    {
+        return this.causes.get(0);
+    }
+
     /** @return the total number of exceptions which caused this exception to be thrown. */
     public int exceptionCount()
     {
