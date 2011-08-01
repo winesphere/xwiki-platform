@@ -50,6 +50,7 @@ import org.dom4j.dom.DOMDocument;
 import org.dom4j.dom.DOMElement;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
+import org.xwiki.model.reference.EntityReference;
 import org.xwiki.model.reference.SpaceReference;
 import org.xwiki.observation.ObservationManager;
 import org.xwiki.query.QueryException;
@@ -92,8 +93,6 @@ public class Package
     private List<DocumentInfo> files = null;
 
     private List<DocumentInfo> customMappingFiles = null;
-
-    private List<DocumentInfo> classFiles = null;
 
     private boolean backupPack = false;
 
@@ -228,7 +227,6 @@ public class Package
     {
         this.files = new ArrayList<DocumentInfo>();
         this.customMappingFiles = new ArrayList<DocumentInfo>();
-        this.classFiles = new ArrayList<DocumentInfo>();
     }
 
     public boolean add(XWikiDocument doc, int defaultAction, XWikiContext context) throws XWikiException
@@ -260,9 +258,6 @@ public class Package
             docinfo.setAction(defaultAction);
             this.files.add(docinfo);
             BaseClass bclass = doc.getXClass();
-            if (bclass.getFieldList().size() > 0) {
-                this.classFiles.add(docinfo);
-            }
             if (bclass.getCustomMapping() != null) {
                 this.customMappingFiles.add(docinfo);
             }
@@ -554,6 +549,60 @@ public class Package
         }
     }
 
+    /**
+     * Sort the documents.
+     * A document containing a class definition will come before any document which uses the class.
+     *
+     * @param documents a list of XWikiDocument to sort.
+     * @throws CircularReferenceException If there is a circular reference
+     *                                    EG: DocumentA has an object of class DocumentB
+     *                                        and DocumentB has an object of class DocumentA.
+     */
+    private static void sortDocuments(final List<DocumentInfo> toSort) throws CircularReferenceException
+    {
+        int i = 0;
+        final List<XWikiDocument> switchedDocuments = new ArrayList<XWikiDocument>();
+        while (i < toSort.size()) {
+            final DocumentInfo docInfoI = toSort.get(i);
+            final XWikiDocument docI = docInfoI.getDoc();
+
+            jloop:
+            for (int j = i + 1; j < toSort.size(); j++) {
+                final XWikiDocument docJ = toSort.get(j).getDoc();
+                final EntityReference docJRef = docJ.getDocumentReference();
+                for (final EntityReference objClass : docI.getXObjects().keySet()) {
+                    if (objClass.equals(docJRef)) {
+                        if (switchedDocuments.contains(docI)) {
+                            throw new CircularReferenceException("There is a circular reference between "
+                                                                 + "the documents " + switchedDocuments);
+                        }
+                        switchedDocuments.add(docI);
+                        toSort.remove(i);
+                        toSort.add(docInfoI);
+                        i--;
+                        break jloop;
+                    }
+                }
+                switchedDocuments.clear();
+            }
+            i++;
+        }
+    }
+
+    /** An exception to be thrown by sortDocuments() if two or more documents reference each other. */
+    private static class CircularReferenceException extends Exception
+    {
+        /**
+         * The Constructor.
+         *
+         * @param message the message detailing what happened.
+         */
+        public CircularReferenceException(final String message)
+        {
+            super(message);
+        }
+    }
+
     public int install(XWikiContext context) throws XWikiException
     {
         boolean isAdmin = context.getWiki().getRightService().hasAdminRights(context);
@@ -589,20 +638,19 @@ public class Package
         om.notify(new XARImportingEvent(), null, context);
 
         try {
-            // Start by installing all documents having a class definition so that their
-            // definitions are available when installing documents using them.
-            for (DocumentInfo classFile : this.classFiles) {
-                if (installDocument(classFile, isAdmin, backup, context) == DocumentInfo.INSTALL_ERROR) {
-                    status = DocumentInfo.INSTALL_ERROR;
-                }
+
+            // Try to put the classes before the documents which reference them.
+            try {
+                sortDocuments(this.files);
+            } catch (CircularReferenceException e) {
+                LOG.warn(e.getMessage() + "\nThis is probably okay since XWikiHibernateStore supports "
+                                        + "saving of objects for which there is no saved class.");
             }
 
             // Install the remaining documents (without class definitions).
             for (DocumentInfo docInfo : this.files) {
-                if (!this.classFiles.contains(docInfo)) {
-                    if (installDocument(docInfo, isAdmin, backup, context) == DocumentInfo.INSTALL_ERROR) {
-                        status = DocumentInfo.INSTALL_ERROR;
-                    }
+                if (installDocument(docInfo, isAdmin, backup, context) == DocumentInfo.INSTALL_ERROR) {
+                    status = DocumentInfo.INSTALL_ERROR;
                 }
             }
             setStatus(status, context);

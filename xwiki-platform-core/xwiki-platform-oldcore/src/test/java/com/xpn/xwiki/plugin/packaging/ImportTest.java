@@ -51,6 +51,8 @@ import com.xpn.xwiki.store.XWikiStoreInterface;
 import com.xpn.xwiki.store.XWikiVersioningStoreInterface;
 import com.xpn.xwiki.test.AbstractBridgedXWikiComponentTestCase;
 import com.xpn.xwiki.user.api.XWikiRightService;
+import com.xpn.xwiki.objects.classes.BaseClass;
+import com.xpn.xwiki.objects.BaseObject;
 
 public class ImportTest extends AbstractBridgedXWikiComponentTestCase
 {
@@ -303,6 +305,50 @@ public class ImportTest extends AbstractBridgedXWikiComponentTestCase
         // get the translation
         translationDoc = foundDocument.getTranslatedDocument("fr", getContext());
         assertFalse(translationDoc.isNew());
+    }
+
+    /**
+     * Test import a document which defines a class and a document which uses that class, in the wrong order.
+     * 
+     * @throws Exception
+     */
+    public void testImportDocumentsClassOrder() throws Exception
+    {
+        final XWikiDocument importClass =
+            new XWikiDocument(new DocumentReference("Test", "Test", "importClass"));
+        final XWikiDocument importObj =
+            new XWikiDocument(new DocumentReference("Test", "Test", "importObj"));
+        importClass.setDefaultLanguage("en");
+        importObj.setDefaultLanguage("en");
+
+        final BaseClass bclass = importClass.getXClass();
+        bclass.addTextField("somefield", "Some Field", 30);
+
+        final BaseObject obj = new BaseObject();
+        obj.setDocumentReference(importObj.getDocumentReference());
+        obj.setXClassReference(importClass.getDocumentReference());
+        importObj.setXObjects(importClass.getDocumentReference(), new ArrayList<BaseObject>(){{
+            add(obj);
+        }});
+
+        final byte[] zipFile =
+            this.createZipFile(new XWikiDocument[] {importObj, importClass},
+                               new String[] {"ISO-8859-1", "ISO-8859-1"});
+
+        // make sure no data is in the packager from the other tests run
+        this.pack = new Package();
+        // import and install this document
+        this.pack.Import(zipFile, getContext());
+        this.pack.install(getContext());
+
+        // check if it is there
+        XWikiDocument importClassDoc =
+            this.xwiki.getDocument(new DocumentReference("Test", "Test", "importClass"), getContext());
+        assertFalse(importClassDoc.isNew());
+
+        XWikiDocument importObjDoc =
+            this.xwiki.getDocument(new DocumentReference("Test", "Test", "importObj"), getContext());
+        assertFalse(importObjDoc.isNew());
     }
 
     private String getPackageXML(XWikiDocument docs[])
